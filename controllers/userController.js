@@ -4,8 +4,16 @@ exports.login = function (req , res) {
     let user = new User(req.body)
     
     user.login()
-    .then( result => res.send(result))
-    .catch( e => res.send(e) )
+    .then( result => {
+        req.session.user = {
+            facouriteColor: "blue" ,
+            userName: user.data.username,
+        }
+        res.send(result)
+    })
+    .catch( e => {
+        res.send(e)
+    } )
 }
 
 exports.logout = function () {
@@ -25,5 +33,9 @@ exports.register = function (req , res) {
 }
 
 exports.home = function (req , res)  {
-    res.render('home-guest')
+    if (req.session.user) {
+        res.send("Welcome to actual application")
+    } else {
+        res.render('home-guest')
+    }
 }
