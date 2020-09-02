@@ -4,20 +4,22 @@ exports.login = function (req , res) {
     let user = new User(req.body)
     
     user.login()
-    .then( result => {
+    .then( () => {
         req.session.user = {
             facouriteColor: "blue" ,
-            userName: user.data.username,
+            username: user.data.username,
         }
-        res.send(result)
+        req.session.save( () => res.redirect('/') )
     })
     .catch( e => {
         res.send(e)
     } )
 }
 
-exports.logout = function () {
-
+exports.logout = function (req , res) {
+    req.session.destroy( () => {
+        res.redirect('/')
+    } )
 }
 
 exports.register = function (req , res) {
@@ -34,7 +36,9 @@ exports.register = function (req , res) {
 
 exports.home = function (req , res)  {
     if (req.session.user) {
-        res.send("Welcome to actual application")
+        res.render('home-dashboard' , {
+            username : req.session.user.username,
+        })
     } else {
         res.render('home-guest')
     }
