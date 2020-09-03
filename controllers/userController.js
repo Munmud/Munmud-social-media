@@ -27,12 +27,23 @@ exports.register = function (req , res) {
     let user = new User(req.body)
     
     user.register()
+    .then( () => {
+        req.session.user = {
+            username : user.data.username
+        }
+        req.session.save( () => {
+            res.redirect('/')
+        } )
+    } )
+    .catch ( (regErrors) => {
+        regErrors.forEach ( (error) => {
+            req.flash('regErrors' , error)
+        } )
+        req.session.save( () => {
+            res.redirect('/')
+        } )
+    })
 
-    if (user.errors.length) {
-        res.send(user.errors)
-    } else {
-        res.send("Congratulations on sign up")
-    }
 }
 
 exports.home = function (req , res)  {
@@ -43,6 +54,7 @@ exports.home = function (req , res)  {
     } else {
         res.render('home-guest', {
             errors : req.flash('errors') ,
+            regErrors : req.flash('regErrors'),
         })
     }
 }

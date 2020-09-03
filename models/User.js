@@ -27,48 +27,89 @@ User.prototype.cleanUp = function() {
     }
 }
 
-User.prototype.validate = function() {
+User.prototype.validate = function () {
+    return new Promise( async (resolve , reject) => {
 
-    // username check
-    if (this.data.username == "" ) {
-        this.errors.push("You must provide a username")
-    }
-    if (!this.data.username == "" && !validator.isAlphanumeric(this.data.username)) {
-        this.errors.push("userName can only contains letters and numbers")
-    }
+        // username check
+        if (this.data.username == "" ) {
+            this.errors.push("You must provide a username")
+        }
+        if (this.data.username.length >0 && this.data.username.length<2) {
+            this.errors.push("username must be at least 2 character")
+        }
+        if (this.data.username.length >30 ) {
+            this.errors.push("username cannot exceed 30 character")
+        }
+    
+        if (!this.data.username == "" && !validator.isAlphanumeric(this.data.username)) {
+            this.errors.push("userName can only contains letters and numbers")
+        }
+    
+        // email check
+        if (!validator.isEmail(this.data.email)) {
+            this.errors.push("You must provide a valid email")
+        }
+    
+        // password check
+        if (this.data.password == "" ) {
+            this.errors.push("You must provide a password")
+        }
+        if (this.data.password.length >0 && this.data.password.length<6) {
+            this.errors.push("Passwords must be at least 6 character")
+        }
+        if (this.data.password.length >50 ) {
+            this.errors.push("Passwords cannot exceed 50 character")
+        }
+    
+        // if all valid check if it has already in the database
+    
+        if (this.data.username.length >2 && this.data.username.length<30 && validator.isAlphanumeric(this.data.username)) {
+            let usernameExist = await usersCollection.findOne( {
+                username : this.data.username
+            })
+            if (usernameExist){
+                this.errors.push("That username already taken")
+            }
+        }
+    
+        if (validator.isEmail(this.data.email)) {
+            let emailExist = await usersCollection.findOne( {
+                email : this.data.email
+            })
+            if (emailExist){
+                this.errors.push("That email already taken")
+            }
+        }
 
-    // email check
-    if (!validator.isEmail(this.data.email)) {
-        this.errors.push("You must provide a valid email")
-    }
-
-    // password check
-    if (this.data.password == "" ) {
-        this.errors.push("You must provide a password")
-    }
-    if (this.data.password.length >0 && this.data.password.length<6) {
-        this.errors.push("Passwords must be at least 6 character")
-    }
-    if (this.data.password.length >50 ) {
-        this.errors.push("Passwords cannot exceed 50 character")
-    }
+        resolve()
+    })
+    
+   
 }
 
-User.prototype.register = function() {
+User.prototype.register = function () {
+    return new Promise (async (resolve , reject) => {
+        
 
-    // Step #1: Validate user data
-    this.cleanUp() ;
-    this.validate() ;
-
-    // Step #2: if no error save to database
-    if (!this.errors.length){
-
-        // hash user password
-        let salt = bcrypt.genSaltSync(10)
-        this.data.password = bcrypt.hashSync(this.data.password , salt) ;
-        usersCollection.insertOne(this.data)
-    }
-
+        // Step #1: Validate user data
+        this.cleanUp() ;
+        await this.validate() ;
+    
+        // Step #2: if no error save to database
+        if (!this.errors.length){
+    
+            // hash user password
+            let salt = bcrypt.genSaltSync(10)
+            this.data.password = bcrypt.hashSync(this.data.password , salt) ;
+            await usersCollection.insertOne(this.data)
+            resolve()
+        }
+        else{
+            reject(this.errors)
+        }
+        
+        
+    })
 }
 
 User.prototype.login = function() {
